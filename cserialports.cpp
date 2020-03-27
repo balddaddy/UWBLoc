@@ -5,8 +5,6 @@
 
 
 #define DEVICE_STR ("STMicroelectronics Virtual COM Port")
-#define DEVICE_STR2 ("USB-SERIAL CH340")
-#define DEVICE_STR3 ("Silicon Labs CP210x USB to UART Bridge")
 #define INST_REPORT_LEN   (65)
 #define INST_REPORT_LEN_HEADER (20)
 #define INST_VERSION_LEN  (16)
@@ -14,27 +12,21 @@
 
 CSerialPorts::CSerialPorts(void)
 {
-    m_deviceports = new QSerialPort(0);  // creat a new serial-port
-    m_is_proccing_data = false;
+    m_nDeviceCount = 0;
+    m_deviceports = NULL;  // creat a new serial-port
 }
 
 CSerialPorts::~CSerialPorts(void)
 {
-    if (m_deviceports->isOpen())
-        m_deviceports->close();
-    delete m_deviceports;
+    for (int id = 0; id < m_nDeviceCount; id++)
+    {
+        if (m_deviceports[id].isOpen()){
+            m_deviceports[id].close();
+        }
+    }
+    delete[] m_deviceports;
 }
 
-
-QStringList CSerialPorts::listPorts()
-{
-    return  m_ports_list;
-}
-
-QSerialPort* CSerialPorts::allPorts()
-{
-    return m_deviceports;
-}
 
 void CSerialPorts::findSerialDevices(void)
 {
@@ -48,7 +40,7 @@ void CSerialPorts::findSerialDevices(void)
                  << _port.hasProductIdentifier() << _port.hasVendorIdentifier() << _port.isBusy()
                  << _port.manufacturer() << _port.description() << "\n";
 
-        if((_port.description()==DEVICE_STR) || (_port.description() == DEVICE_STR2))
+        if(_port.description()==DEVICE_STR)
         {
             m_port_info += _port;
             m_ports_list += _port.portName();
@@ -56,38 +48,41 @@ void CSerialPorts::findSerialDevices(void)
     }
     if (m_port_info.isEmpty())
     {
-        qDebug() << "Can't find any Tags or BSs!\n";
+        qDebug() << "Can't find any Tags or Anchors!\n";
     }
     else {
+        qDebug() << "The anchor's serial ports are as following: \n";
+        m_nDeviceCount = m_ports_list.count();
+        m_deviceports = new QSerialPort[m_nDeviceCount];
+        int nID = 0;
         foreach (const QSerialPortInfo &_port, m_port_info)
         {
-            qDebug() << "The BS serial port as following: \n";
+            m_deviceports[nID++].setPort(_port);
             qDebug() << _port.portName() << _port.description() << "\n";
         }
     }
 }
 
-int CSerialPorts::openSerialDevices(QSerialPortInfo device)
+int CSerialPorts::openSerialDevices(QSerialPort &device)
 {
     int nError = 0;
-    m_deviceports->setPort(device);
-    if (!m_deviceports->isOpen())
+    if (!device.isOpen())
     {
-        if (m_deviceports->open(QIODevice::ReadWrite))
+        if (device.open(QIODevice::ReadWrite))
         {
-            m_deviceports->setBaudRate(QSerialPort::Baud115200);
-            m_deviceports->setDataBits(QSerialPort::Data8);
-            m_deviceports->setParity(QSerialPort::NoParity);
-            m_deviceports->setStopBits(QSerialPort::OneStop);
-            m_deviceports->setFlowControl(QSerialPort::NoFlowControl);
+            device.setBaudRate(QSerialPort::Baud115200);
+            device.setDataBits(QSerialPort::Data8);
+            device.setParity(QSerialPort::NoParity);
+            device.setStopBits(QSerialPort::OneStop);
+            device.setFlowControl(QSerialPort::NoFlowControl);
 
             qDebug() << "Connected to" << device.portName() << "\n";
-            writeData("deca$q");
+            writeData(device, "deca$q");
             qDebug() << "send \"deca$\"\n" ;
         }
         else {
-            qDebug() << "Open device fails! Error:" << m_deviceports->error() << "\n";
-            m_deviceports->close();
+            qDebug() << "Open device fails! Error:" << device.error() << "\n";
+            device.close();
             nError = -1;
         }
     }
@@ -98,42 +93,58 @@ int CSerialPorts::openSerialDevices(QSerialPortInfo device)
     return nError;
 }
 
-void CSerialPorts::readData(void)
+QByteArray CSerialPorts::readData(QSerialPort &device)
 {
-    QByteArray data = m_deviceports->readAll();
-    qDebug() << "Data:: " << data ;
+    QByteArray data; data.clear();
+    while(device.waitForReadyRead(3000)){
+        QByteArray data = device.readAll();
+    }
+    if (data.isEmpty())
+        qDebug() << "Can't read any data from device" << device.portName() << ".\n";
+    else
+        qDebug() << "Data: " << data <<".\n";
+    return data;
 }
 
-void CSerialPorts::writeData(const QByteArray &data)
+void CSerialPorts::writeData(QSerialPort &device, const QByteArray &data)
 {
-    if (m_deviceports->isOpen())
+    if (device.isOpen())
     {
-        m_deviceports->write(data);
+        device.write(data);
+        qDebug() << "Sending msg to devices successfully!\n";
     }
     else
         qDebug() << "Sending msg to devices failed!\n";
 }
 
-void CSerialPorts::closePort(void)
+void CSerialPorts::closePort(QSerialPort &device)
 {
-    m_deviceports->close();
+    device.close();
+    qDebug() << "Device" << device.portName() << "is closed.\n";
 }
 
-void CSerialPorts::testDevices(void)
+int CSerialPorts::testDevices(void)
 {
+    int nError;
     this->findSerialDevices();
-    foreach (const QSerialPortInfo &_port, m_port_info)
+    for (int nid = 0; nid < m_nDeviceCount; nid++)
     {
-        this->openSerialDevices(_port);
+        nError = this->openSerialDevices(m_deviceports[nid]);
+    }
+    for (int nid = 0; nid < m_nDeviceCount; nid++)
+    {
         int nCount = 0;
-        while(m_deviceports->waitForReadyRead(3000)){
-            this->readData();
-            nCount++;
-            if(nCount > 100)
-                break;
+        QByteArray data = this->readData(m_deviceports[nid]);
+        if (data.isEmpty())
+        {
+            qDebug() << "Data of Device:" << m_deviceports[nid].portName() << "is empty!\n";
+            continue;
         }
-        qDebug() << "\n@ end of data\n";
-        this->closePort();
+        nCount++;
+        if(nCount > 100){
+            this->closePort(m_deviceports[nid]);
+            break;
+        }
     }
 }
 

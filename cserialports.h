@@ -13,27 +13,20 @@ public:
     ~CSerialPorts(void);
 
 private:
+    int m_nDeviceCount;
+    QSerialPort* m_deviceports;
     QList<QSerialPortInfo> m_port_info;
     QStringList m_ports_list;
-    QSerialPort* m_deviceports;
-
-    QList<QByteArray> m_cmd_list;
-
-    QString m_connct_version;
-    QString m_connct_config;
-    bool m_is_proccing_data;
 
 private:
-    QStringList  listPorts();
-    QSerialPort* allPorts();
     void findSerialDevices(void); // find all tags and BSs
-    int  openSerialDevices(QSerialPortInfo device);
-    void closePort(void);
-    void readData(void);
-    void writeData(const QByteArray &data);
+    int  openSerialDevices(QSerialPort &device);
+    void closePort(QSerialPort &device);
+    QByteArray readData(QSerialPort &device);
+    void writeData(QSerialPort &device, const QByteArray &data);
     void handleError(QSerialPort::SerialPortError error);
 public:
-    void testDevices(void);
+    int testDevices(void);
 };
 
 #endif // CSERIALPORTS_H

@@ -11,5 +11,7 @@ int main(int argc, char *argv[])
     qDebug() << "Program Started\n";
     CSerialPorts *device = new CSerialPorts;
     device->testDevices();
+
+    qDebug() << "End of Processing.\n";
     return a.exec();
 }
