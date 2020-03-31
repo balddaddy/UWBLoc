@@ -1,17 +1,15 @@
-#include <QCoreApplication>
-#include <QDebug>
-#include "cserialports.h"
-
-int main(int argc, char *argv[])
+#include <iostream>
+// #include "cserialports.h"
+using namespace std;
+int main(void)
 {
-    QCoreApplication a(argc, argv);
-    qDebug() << "This is a demo to test UWB localization System.\n"
+    cout << "This is a demo to test UWB localization System.\n"
              << "Author: CharleyChang    Data: 2020. 03. 25\n";
 
-    qDebug() << "Program Started\n";
-    CSerialPorts *device = new CSerialPorts;
-    device->testDevices();
+    cout << "Program Started\n";
+   //  CSerialPorts *device = new CSerialPorts;
+   //  device->testDevices();
 
-    qDebug() << "End of Processing.\n";
-    return a.exec();
+    cout << "End of Processing.\n";
+    return 0;
 }

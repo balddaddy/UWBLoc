@@ -16,7 +16,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+        cprocrawdata.cpp \
         cserialports.cpp \
+        ctaglocalg.cpp \
+        ctagtrackalg.cpp \
+        ctcpcom.cpp \
         main.cpp
 
 TRANSLATIONS += \
@@ -28,4 +32,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    cserialports.h
+    cprocrawdata.h \
+    cserialports.h \
+    ctaglocalg.h \
+    ctagtrackalg.h \
+    ctcpcom.h
