@@ -1,10 +1,23 @@
 #ifndef CSERIALPORTS_H
 #define CSERIALPORTS_H
 
-#include <QtSerialPort/QSerialPort>
-#include <QtSerialPort/QSerialPortInfo>
-#include <QStringList>
-#include <QList>
+#ifdef _OS_WIN
+    #include <QtSerialPort/QSerialPort>
+    #include <QtSerialPort/QSerialPortInfo>
+    #include <QStringList>
+    #include <QList>
+#endif
+
+#ifdef _OS_LINUX
+    #include <stdio.h>
+    #include <string.h>
+    #include <sys/types.h>
+    #include <fcntl.h>
+    #include <vector>
+#endif
+#ifdef _OS_MACOS
+
+#endif
 
 class CSerialPorts
 {
