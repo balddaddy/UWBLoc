@@ -19,6 +19,16 @@
 
 #endif
 
+typedef enum _ERROR_CODE {
+    _ERROR_CODE_NOTFIND = 0,
+    _ERROR_CODE_OPEN_FAIL,
+    _ERROR_CODE_CONNET_FAIL,
+    _ERROR_CODE_FIND_SUCC,
+    _ERROR_CODE_OPEN_SUCC,
+    _ERROR_CODE_CONNET_SUCC,
+    _ERROR_CODE_TIMEOUT
+} ERROR_CODE;
+
 class CSerialPorts
 {
 public:
@@ -33,12 +43,13 @@ private:
 
 private:
     void findSerialDevices(void); // find all tags and BSs
-    int  openSerialDevices(QSerialPort &device);
+    ERROR_CODE openSerialDevices(QSerialPort &device);
     void closePort(QSerialPort &device);
     QByteArray readData(QSerialPort &device);
     void writeData(QSerialPort &device, const QByteArray &data);
     void handleError(QSerialPort::SerialPortError error);
 public:
+    ERROR_CODE openDevices(void);
     int testDevices(void);
 };
 

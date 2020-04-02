@@ -33,12 +33,12 @@ void CSerialPorts::findSerialDevices(void)
     m_ports_list.clear();
     m_port_info.clear();
 
-    qDebug() << "List all serial-ports bellow: \n";
+    qDebug() << "List all serial-ports as following:" << endl;
     foreach(const QSerialPortInfo &_port, QSerialPortInfo::availablePorts())
     {
         qDebug() << _port.portName() << _port.vendorIdentifier() << _port.productIdentifier()
                  << _port.hasProductIdentifier() << _port.hasVendorIdentifier() << _port.isBusy()
-                 << _port.manufacturer() << _port.description() << "\n";
+                 << _port.manufacturer() << _port.description()  << endl;
 
         if(_port.description()==DEVICE_STR)
         {
@@ -48,7 +48,7 @@ void CSerialPorts::findSerialDevices(void)
     }
     if (m_port_info.isEmpty())
     {
-        qDebug() << "Can't find any Tags or Anchors!\n";
+        qDebug() << "Can't find any devices!" << endl;
     }
     else {
         qDebug() << "The anchor's serial ports are as following: \n";
@@ -58,14 +58,14 @@ void CSerialPorts::findSerialDevices(void)
         foreach (const QSerialPortInfo &_port, m_port_info)
         {
             m_deviceports[nID++].setPort(_port);
-            qDebug() << _port.portName() << _port.description() << "\n";
+            qDebug() << _port.portName() << _port.description() << endl;
         }
     }
 }
 
-int CSerialPorts::openSerialDevices(QSerialPort &device)
+ERROR_CODE CSerialPorts::openSerialDevices(QSerialPort &device)
 {
-    int nError = 0;
+    ERROR_CODE error_code;
     if (!device.isOpen())
     {
         if (device.open(QIODevice::ReadWrite))
@@ -79,18 +79,19 @@ int CSerialPorts::openSerialDevices(QSerialPort &device)
             qDebug() << "Connected to" << device.portName() << "\n";
             writeData(device, "deca$q");
             qDebug() << "send \"deca$\"\n" ;
+            error_code = _ERROR_CODE_OPEN_SUCC;
         }
         else {
             qDebug() << "Open device fails! Error:" << device.error() << "\n";
             device.close();
-            nError = -1;
+            error_code = _ERROR_CODE_OPEN_FAIL;
         }
     }
     else {
         qDebug() << "Warning: Device has already been opened!\n";
-        nError = 1;
+        error_code = _ERROR_CODE_OPEN_SUCC;
     }
-    return nError;
+    return error_code;
 }
 
 QByteArray CSerialPorts::readData(QSerialPort &device)
@@ -123,6 +124,27 @@ void CSerialPorts::closePort(QSerialPort &device)
     qDebug() << "Device" << device.portName() << "is closed.\n";
 }
 
+ERROR_CODE CSerialPorts::openDevices(void)
+{
+    ERROR_CODE error_code;
+    this->findSerialDevices();
+    if (m_nDeviceCount == 0)
+    {
+        error_code = _ERROR_CODE_NOTFIND;
+    }
+    else{
+        for (int nid = 0; nid < m_nDeviceCount; nid++)
+        {
+            error_code = this->openSerialDevices(m_deviceports[nid]);
+            if (error_code == _ERROR_CODE_OPEN_FAIL)
+                return error_code;
+        }
+        error_code = _ERROR_CODE_FIND_SUCC;
+    }
+    return error_code;
+}
+
+
 int CSerialPorts::testDevices(void)
 {
     int nError;
@@ -146,5 +168,6 @@ int CSerialPorts::testDevices(void)
             break;
         }
     }
+    return nError;
 }
 
