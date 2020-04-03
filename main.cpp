@@ -86,7 +86,7 @@ int main(void)
          cout << "Open the devices successfully!" << endl;
      }
 
-//     device->testDevices();
+     device->testDevices();
 
     cout << "End of Processing.\n";
     return 0;

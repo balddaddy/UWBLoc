@@ -4,7 +4,8 @@
 #include "cserialports.h"
 
 
-#define DEVICE_STR ("STMicroelectronics Virtual COM Port")
+#define DEVICE_STR_WIN ("STMicroelectronics Virtual COM Port")
+#define DEVICE_STR_LINUX ("Virtual COM Port")
 #define INST_REPORT_LEN   (65)
 #define INST_REPORT_LEN_HEADER (20)
 #define INST_VERSION_LEN  (16)
@@ -40,7 +41,7 @@ void CSerialPorts::findSerialDevices(void)
                  << _port.hasProductIdentifier() << _port.hasVendorIdentifier() << _port.isBusy()
                  << _port.manufacturer() << _port.description()  << endl;
 
-        if(_port.description()==DEVICE_STR)
+        if((_port.description()==DEVICE_STR_LINUX) || (_port.description()==DEVICE_STR_WIN))
         {
             m_port_info += _port;
             m_ports_list += _port.portName();
@@ -147,7 +148,7 @@ ERROR_CODE CSerialPorts::openDevices(void)
 
 int CSerialPorts::testDevices(void)
 {
-    int nError;
+    int nError = 0;
     this->findSerialDevices();
     for (int nid = 0; nid < m_nDeviceCount; nid++)
     {
