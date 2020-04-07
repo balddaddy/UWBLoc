@@ -77,15 +77,14 @@ int main(void)
      CSerialPorts *device = new CSerialPorts;
      ERROR_CODE error_code = device->openDevices();
      if (error_code == _ERROR_CODE_NOTFIND){
-         cout << "Can't find any devices!" << endl;
+         cout << "\rCan't find any devices!" << endl;
      }
      else if (error_code == _ERROR_CODE_OPEN_FAIL){
-         cout << "Can't open the devices!" << endl;
+         cout << "\rCan't open the devices!" << endl;
      }
      else if (error_code == _ERROR_CODE_OPEN_SUCC){
-         cout << "Open the devices successfully!" << endl;
+         cout << "\rOpen the devices successfully!" << endl;
      }
-
      device->testDevices();
 
     cout << "End of Processing.\n";
