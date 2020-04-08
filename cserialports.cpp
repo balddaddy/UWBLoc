@@ -63,7 +63,7 @@ void CSerialPorts::findSerialDevices(void)
         qDebug() << "Can't find any devices!" << endl;
     }
     else {
-        qDebug() << "The anchor's serial ports are as following: \n";
+        qDebug() << "The anchor's serial ports are as following: " << endl;
         foreach (const QSerialPortInfo &_port, m_port_info)
         {
             qDebug() << _port.portName() << _port.description() << endl;
@@ -89,17 +89,17 @@ ERROR_CODE CSerialPorts::openSerialDevices(QSerialPort* device)
             device->setStopBits(QSerialPort::OneStop);
             device->setFlowControl(QSerialPort::NoFlowControl);
 
-            qDebug() << "Connected to" << device->portName() << "\n";
+            qDebug() << "Connected to" << device->portName() << "" << endl;
             error_code = _ERROR_CODE_OPEN_SUCC;
         }
         else {
-            qDebug() << "Open device fails! Error:" << device->error() << "\n";
+            qDebug() << "Open device fails! Error:" << device->error() << endl;
             device->close();
             error_code = _ERROR_CODE_OPEN_FAIL;
         }
     }
     else {
-        qDebug() << "Warning: Device has already been opened!\n";
+        qDebug() << "Warning: Device has already been opened!" << endl;
         error_code = _ERROR_CODE_OPEN_SUCC;
     }
     return error_code;
@@ -125,16 +125,16 @@ void CSerialPorts::writeData(QSerialPort* device, const QByteArray &data)
     if (device->isOpen())
     {
         device->write(data);
-        qDebug() << "Sending msg to devices successfully!\n";
+        qDebug() << "Sending msg to devices successfully!" << endl;
     }
     else
-        qDebug() << "Sending msg to devices failed!\n";
+        qDebug() << "Sending msg to devices failed!" << endl;
 }
 
 void CSerialPorts::closePort(QSerialPort &device)
 {
     device.close();
-    qDebug() << "Device" << device.portName() << "is closed.\n";
+    qDebug() << "Device" << device.portName() << "is closed" << endl;
 }
 
 ERROR_CODE CSerialPorts::openDevices(void)
