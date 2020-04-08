@@ -25,6 +25,7 @@ public:
     ~CSerialPorts(void);
 
 private:
+    QSerialPort::BaudRate m_baudrate;
     QList<QSerialPort*> m_deviceports;
     QList<QSerialPortInfo> m_port_info;
     QStringList m_ports_list;

@@ -15,6 +15,12 @@
 CSerialPorts::CSerialPorts(void)
 {
     m_deviceports.clear();  // creat a new serial-port
+#ifdef _OS_WIN
+            m_baudrate = QSerialPort::Baud115200;
+#endif
+#ifdef _OS_LINUX
+            m_baudrate = QSerialPort::Baud9600;
+#endif
 }
 
 CSerialPorts::~CSerialPorts(void)
@@ -47,7 +53,7 @@ void CSerialPorts::findSerialDevices(void)
         {
             m_port_info += _port;
             m_ports_list += _port.portName();
-            QSerialPort* tmpDevice = new QSerialPort(0);
+            QSerialPort* tmpDevice = new QSerialPort(nullptr);
             tmpDevice->setPort(_port);
             m_deviceports += tmpDevice;
         }
@@ -72,15 +78,18 @@ ERROR_CODE CSerialPorts::openSerialDevices(QSerialPort* device)
     {
         if (device->open(QIODevice::ReadWrite))
         {
+#ifdef _OS_LINUX
+            device->setBaudRate(QSerialPort::Baud9600);
+#endif
+#ifdef _OS_WIN
             device->setBaudRate(QSerialPort::Baud115200);
+#endif
             device->setDataBits(QSerialPort::Data8);
             device->setParity(QSerialPort::NoParity);
             device->setStopBits(QSerialPort::OneStop);
             device->setFlowControl(QSerialPort::NoFlowControl);
 
             qDebug() << "Connected to" << device->portName() << "\n";
-//            writeData(device, "deca$q");
-//            qDebug() << "send \"deca$\"\n" ;
             error_code = _ERROR_CODE_OPEN_SUCC;
         }
         else {
@@ -159,10 +168,8 @@ ERROR_CODE CSerialPorts::testDevices(void)
     int nNum = getDeviceNum();
     for (int nid = 0; nid < nNum; nid++)
     {
-        int nCount = 0;
-        while (nCount < 100)
+        for (int niid = 0; niid < 100; niid++)
         {
-            nCount++;
             QByteArray data = this->readData(m_deviceports[nid]);
             if (data.isEmpty())
                 return  _ERROR_CODE_READ_FAIL;

@@ -1,11 +1,14 @@
+#include <QCoreApplication>
 #include <iostream>
 #include <string>
 #include "cserialports.h"
 
 using namespace std;
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    QCoreApplication coreApplication(argc, argv);
+
     cout << string(1000,'\n');
 
     cout << "+++This is a demo to test UWB localization System.+++\n"
@@ -15,7 +18,7 @@ int main(void)
 
     int nAnchNum = 0; int nTagNum = 0;
     double *dAnch_X, *dAnch_Y, *dAnch_Z;
-    dAnch_X = dAnch_Y = dAnch_Z = NULL;
+    dAnch_X = dAnch_Y = dAnch_Z = nullptr;
     while (nTagNum < 1 || nTagNum > 8)
     {
         cout << "\n";
@@ -34,7 +37,7 @@ int main(void)
         cout << "Please input the number of anchors[1~4]:";
         cin >> nAnchNum;
         if (cin.fail() || nAnchNum < 1 || nAnchNum > 4){
-            cin.clear(); 
+            cin.clear();
             cin.ignore(1000,'\n');
             cout << "Invalid input! Please input a number between 1~4." << endl;
         }
@@ -49,7 +52,7 @@ int main(void)
         cout << "\nPlease input the coordination of the anchor No." << nid+1 << "\n";
         cout << "X:"; cin >> dX;
         while (cin.fail()){
-            cin.clear(); 
+            cin.clear();
             cin.ignore(1000,'\n');
             cout << "Invalid input! Please input a number!" << endl;
             cout << "X:"; cin >> dX;
@@ -88,5 +91,6 @@ int main(void)
      device->testDevices();
 
     cout << "End of Processing.\n";
-    return 0;
+
+    return coreApplication.exec();
 }
