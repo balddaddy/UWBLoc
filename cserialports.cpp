@@ -1,5 +1,4 @@
 #include <QDebug>
-#include <QObject>
 
 #include "cserialports.h"
 
@@ -12,15 +11,15 @@
 #define INST_VERSION_LEN  (16)
 #define INST_CONFIG_LEN   (1)
 
-CSerialPorts::CSerialPorts(void)
+CSerialPorts::CSerialPorts(void) : m_isReadingData(false), m_isPrintingData(false)
 {
-    m_deviceports.clear();  // creat a new serial-port
 #ifdef _OS_WIN
             m_baudrate = QSerialPort::Baud115200;
 #endif
 #ifdef _OS_LINUX
             m_baudrate = QSerialPort::Baud9600;
 #endif
+    m_deviceports.clear();  // creat a new serial-port
 }
 
 CSerialPorts::~CSerialPorts(void)
@@ -137,25 +136,23 @@ void CSerialPorts::closePort(QSerialPort &device)
     qDebug() << "Device" << device.portName() << "is closed" << endl;
 }
 
-ERROR_CODE CSerialPorts::openDevices(void)
+void CSerialPorts::openDevices(ERROR_CODE& err)
 {
-    ERROR_CODE error_code;
     this->findSerialDevices();
     int nCount = m_deviceports.length();
     if (nCount == 0)
     {
-        error_code = _ERROR_CODE_NOTFIND;
+        err = _ERROR_CODE_NOTFIND;
     }
     else{
         foreach (QSerialPort* _port, m_deviceports)
         {
-            error_code = this->openSerialDevices(_port);
-            if (error_code == _ERROR_CODE_OPEN_FAIL)
-                return error_code;
+            err = this->openSerialDevices(_port);
+            if (err == _ERROR_CODE_OPEN_FAIL)
+                break;
         }
-        error_code = _ERROR_CODE_FIND_SUCC;
+        err = _ERROR_CODE_FIND_SUCC;
     }
-    return error_code;
 }
 
 int CSerialPorts::getDeviceNum(void)
@@ -165,7 +162,14 @@ int CSerialPorts::getDeviceNum(void)
 
 ERROR_CODE CSerialPorts::testDevices(void)
 {
+    ERROR_CODE err;
+    this->openDevices(err);
     int nNum = getDeviceNum();
+    if (nNum == 0)
+    {
+        err = _ERROR_CODE_NOTFIND;
+        return  err;
+    }
     for (int nid = 0; nid < nNum; nid++)
     {
         for (int niid = 0; niid < 100; niid++)
@@ -176,6 +180,7 @@ ERROR_CODE CSerialPorts::testDevices(void)
             qDebug() << data << endl;
         }
     }
-    return _ERROR_CODE_READ_SUCC;
+    err = _ERROR_CODE_READ_SUCC;
+    return err;
 }
 
