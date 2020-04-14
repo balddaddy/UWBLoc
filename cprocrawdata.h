@@ -19,12 +19,6 @@ typedef enum _DATA_TYPE {
     _DATA_TYPE_UNDEFINED
 } DATA_TYPE;
 
-#define _MAX_TAG_NUM 1000
-#define _MAX_ANCHOR_NUM 100
-#define _RAW_DATA_PIECE_LEN  65
-
-extern QMutex g_rawDataMutex;
-
 typedef  struct _TAG_ANCHOR_DATA {
     int nTagNum;
     int nAnchNum;
@@ -67,6 +61,12 @@ typedef  struct _TAG_ANCHOR_DATA {
         nTagNum = 0; nAnchNum = 0;
     }
 } TAG_ANCHOR_DATA;
+
+#define _MAX_TAG_NUM 1000
+#define _MAX_ANCHOR_NUM 100
+#define _RAW_DATA_PIECE_LEN  65
+
+extern QMutex g_rawDataMutex;
 
 class cProcRawData : public QObject
 {
