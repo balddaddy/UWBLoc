@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <math.h>
+#include <QThread>
 #include "cserialports.h"
 #include "cprocrawdata.h"
 #include "ctaglocalg.h"
@@ -101,52 +102,54 @@ int main(int argc, char *argv[])
 //    procRawData->init(1,4);
 //    procRawData->processRawData();
 
-    // Step3. locate tag based on ranges
-    int nAnchNum = 4;
-    COORD_XYZ *Pos_Anch = new COORD_XYZ[nAnchNum];
-    int nTagNum = 4;
-    COORD_XYZ *Pos_Tag = new COORD_XYZ[nTagNum];
-    Pos_Anch[0].dx = 0;     Pos_Anch[0].dy = 0;      Pos_Anch[0].dz = 0;
-    Pos_Anch[1].dx = 110;   Pos_Anch[1].dy = 10;     Pos_Anch[1].dz = 0;
-    Pos_Anch[2].dx = 10;    Pos_Anch[2].dy = 120;    Pos_Anch[2].dz = 0;
-    Pos_Anch[3].dx = 2;     Pos_Anch[3].dy = 7;      Pos_Anch[3].dz = 130;
+//    // Step3. locate tag based on ranges
+//    int nAnchNum = 4;
+//    COORD_XYZ *Pos_Anch = new COORD_XYZ[nAnchNum];
+//    int nTagNum = 4;
+//    COORD_XYZ *Pos_Tag = new COORD_XYZ[nTagNum];
+//    Pos_Anch[0].dx = 0;     Pos_Anch[0].dy = 0;      Pos_Anch[0].dz = 0;
+//    Pos_Anch[1].dx = 110;   Pos_Anch[1].dy = 10;     Pos_Anch[1].dz = 0;
+//    Pos_Anch[2].dx = 10;    Pos_Anch[2].dy = 120;    Pos_Anch[2].dz = 0;
+//    Pos_Anch[3].dx = 2;     Pos_Anch[3].dy = 7;      Pos_Anch[3].dz = 130;
 
-    Pos_Tag[0].dx = 20; Pos_Tag[0].dy = 30; Pos_Tag[0].dz = 25;
-    Pos_Tag[1].dx = 50; Pos_Tag[1].dy = 25; Pos_Tag[1].dz = 65;
-    Pos_Tag[2].dx = 70; Pos_Tag[2].dy = 40; Pos_Tag[2].dz = 55;
-    Pos_Tag[3].dx = 40; Pos_Tag[3].dy = 80; Pos_Tag[3].dz = 0;
+//    Pos_Tag[0].dx = 20; Pos_Tag[0].dy = 30; Pos_Tag[0].dz = 25;
+//    Pos_Tag[1].dx = 50; Pos_Tag[1].dy = 25; Pos_Tag[1].dz = 65;
+//    Pos_Tag[2].dx = 70; Pos_Tag[2].dy = 40; Pos_Tag[2].dz = 55;
+//    Pos_Tag[3].dx = 40; Pos_Tag[3].dy = 80; Pos_Tag[3].dz = 0;
 
-    cTagLocAlg* tagLoc = new cTagLocAlg;
+//    cTagLocAlg* tagLoc = new cTagLocAlg;
+//    COORD_XYZ* est_Tag_Pos = new COORD_XYZ[nTagNum];
 
-    for(int id = 0; id < nTagNum; id++)
-    {
-        double* dRang = new double[nAnchNum];
-        memset(dRang, 0, sizeof(double)*nAnchNum);
-        for(int iid = 0; iid < nAnchNum; iid++)
-        {
-            double dXX = (Pos_Tag[id].dx - Pos_Anch[iid].dx)*(Pos_Tag[id].dx - Pos_Anch[iid].dx);
-            double dYY = (Pos_Tag[id].dy - Pos_Anch[iid].dy)*(Pos_Tag[id].dy - Pos_Anch[iid].dy);
-            double dZZ = (Pos_Tag[id].dz - Pos_Anch[iid].dz)*(Pos_Tag[id].dz - Pos_Anch[iid].dz);
-            dRang[iid] = sqrt(dXX+dYY+dZZ);
-        }
-        COORD_XYZ est_Tag_Pos;
-//        tagLoc->locEstByMatrix(nAnchNum, Pos_Anch, dRang, est_Tag_Pos);
-        tagLoc->locEstByLSE(nAnchNum, Pos_Anch, dRang, est_Tag_Pos);
+//    for(int id = 0; id < nTagNum; id++)
+//    {
+//        double* dRang = new double[nAnchNum];
+//        memset(dRang, 0, sizeof(double)*nAnchNum);
+//        for(int iid = 0; iid < nAnchNum; iid++)
+//        {
+//            double dXX = (Pos_Tag[id].dx - Pos_Anch[iid].dx)*(Pos_Tag[id].dx - Pos_Anch[iid].dx);
+//            double dYY = (Pos_Tag[id].dy - Pos_Anch[iid].dy)*(Pos_Tag[id].dy - Pos_Anch[iid].dy);
+//            double dZZ = (Pos_Tag[id].dz - Pos_Anch[iid].dz)*(Pos_Tag[id].dz - Pos_Anch[iid].dz);
+//            dRang[iid] = sqrt(dXX+dYY+dZZ);
+//        }
+//        est_Tag_Pos[id].dx = 0.; est_Tag_Pos[id].dy = 0.; est_Tag_Pos[id].dz = 0.;
+////        tagLoc->locEstByMatrix(nAnchNum, Pos_Anch, dRang, est_Tag_Pos+id);
+//        tagLoc->locEstByLSE(nAnchNum, Pos_Anch, dRang, est_Tag_Pos+id);
 
-        cout << " The real tag position of Tag" <<id << " is: " << Pos_Tag[id].dx <<"\t" << Pos_Tag[id].dy <<"\t" << Pos_Tag[id].dz << endl;
-        cout << " The estimated tag position of Tag" <<id << " is: " << est_Tag_Pos.dx <<"\t" << est_Tag_Pos.dy <<"\t" << est_Tag_Pos.dz << endl;
-        cout << " The error is: " << abs(Pos_Tag[id].dx - est_Tag_Pos.dx) <<"\t"
-             << abs(Pos_Tag[id].dy - est_Tag_Pos.dy) <<"\t"
-             << abs(Pos_Tag[id].dz - est_Tag_Pos.dz) << endl;
-    }
+//        cout << " The real tag position of Tag" << id << " is: " << Pos_Tag[id].dx <<"\t" << Pos_Tag[id].dy <<"\t" << Pos_Tag[id].dz << endl;
+//        cout << " The estimated tag position of Tag" <<id << " is: " << est_Tag_Pos[id].dx <<"\t" << est_Tag_Pos[id].dy <<"\t" << est_Tag_Pos[id].dz << endl;
+//        cout << " The error is: " << abs(Pos_Tag[id].dx - est_Tag_Pos[id].dx) <<"\t"
+//             << abs(Pos_Tag[id].dy - est_Tag_Pos[id].dy) <<"\t"
+//             << abs(Pos_Tag[id].dz - est_Tag_Pos[id].dz) << endl;
+//    }
 
-
-
-    delete  tagLoc;
-    delete [] Pos_Anch;
-    delete [] Pos_Tag;
+//    delete  tagLoc;
+//    delete [] est_Tag_Pos;
+//    delete [] Pos_Anch;
+//    delete [] Pos_Tag;
 
     // Step4. upload results to server
 
+
+    cout << "=====Program End=====" << endl;
     return coreApplication.exec();
 }

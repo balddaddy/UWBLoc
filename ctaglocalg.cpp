@@ -12,7 +12,7 @@ cTagLocAlg::~cTagLocAlg()
 
 }
 
-void cTagLocAlg::locEstByMatrix(const int nAnchNum, const COORD_XYZ *dAnchPos, const double *dTagRang, COORD_XYZ &dTagPos)
+void cTagLocAlg::locEstByMatrix(const int nAnchNum, const COORD_XYZ *dAnchPos, const double *dTagRang, COORD_XYZ *dTagPos)
 {
     if (nAnchNum < 3)
         return;   // couldn't locate the tag
@@ -46,9 +46,9 @@ void cTagLocAlg::locEstByMatrix(const int nAnchNum, const COORD_XYZ *dAnchPos, c
     }
     __CCMATH__::MatrixMultiply(A_Inv, D, Pos_Tag, 3, 3, 3, 1);
 
-    dTagPos.dx = Pos_Tag[0][0];
-    dTagPos.dy = Pos_Tag[1][0];
-    dTagPos.dz = Pos_Tag[2][0];
+    dTagPos->dx = Pos_Tag[0][0];
+    dTagPos->dy = Pos_Tag[1][0];
+    dTagPos->dz = Pos_Tag[2][0];
 
     for (int id = 0; id < 3; id++)
     {
@@ -67,9 +67,10 @@ void cTagLocAlg::locEstByMatrix(const int nAnchNum, const COORD_XYZ *dAnchPos, c
     }
     delete [] A; delete [] D;
     A = nullptr; D = nullptr;
+    return;
 }
 
-void cTagLocAlg::locEstByLSE(const int nAnchNum, const COORD_XYZ *dAnchPos, const double *dTagRang, COORD_XYZ &dTagPos)
+void cTagLocAlg::locEstByLSE(const int nAnchNum, const COORD_XYZ *dAnchPos, const double *dTagRang, COORD_XYZ *dTagPos)
 {
     if (nAnchNum < 3)
         return;   // couldn't locate the tag
@@ -115,9 +116,9 @@ void cTagLocAlg::locEstByLSE(const int nAnchNum, const COORD_XYZ *dAnchPos, cons
     __CCMATH__::MatrixMultiply(TransA, D, TransA_Multi_D, 3, nAnchNum - 1, nAnchNum - 1, 1);
     __CCMATH__::MatrixMultiply(TransA_Multi_A_Inv, TransA_Multi_D, Pos_Tag, 3, 3, 3, 1);
 
-    dTagPos.dx = Pos_Tag[0][0];
-    dTagPos.dy = Pos_Tag[1][0];
-    dTagPos.dz = Pos_Tag[2][0];
+    dTagPos->dx = Pos_Tag[0][0];
+    dTagPos->dy = Pos_Tag[1][0];
+    dTagPos->dz = Pos_Tag[2][0];
 
     for (int id = 0; id < 3; id++)
     {
@@ -145,4 +146,5 @@ void cTagLocAlg::locEstByLSE(const int nAnchNum, const COORD_XYZ *dAnchPos, cons
     }
     delete [] A; delete [] D;
     A = nullptr; D = nullptr;
+    return;
 }

@@ -6,6 +6,7 @@
 
 # include "ccmath.h"
 # include <math.h>
+# include <complex>
 # include <memory.h>
 #include <cfloat>
 
@@ -647,11 +648,11 @@ namespace __CCMATH__ {
   {
       if (*Z != NULL)
           delete[] *Z;
-      *Z = new complex<double>[M+N-1];
+      *Z = new complex<double> [M+N-1];
 
       for (int i = 0; i < M+N-1; i++)
       {
-          *(*Z+i) = 0.0+0i;
+          *(*Z+i) = 0;
           int nTmp = i-N+1;
           if (nTmp < 0)
           {
@@ -1092,6 +1093,7 @@ namespace __CCMATH__ {
             }
             return 0;
         }
+        return 0;
     }
 
     int MatrixCofactor(complex<double> **A, complex<double> **B, int rowA, int colA)
@@ -1148,6 +1150,7 @@ namespace __CCMATH__ {
             }
             return 0;
         }
+        return 0;
     }
 
 

@@ -14,8 +14,8 @@ public:
     ~cTagLocAlg();
 
 public:
-    void locEstByMatrix(const int nAnchNum, const COORD_XYZ* dAnchPos, const double* dTagRang, COORD_XYZ &dTagPos);
-    void locEstByLSE(const int nAnchNum, const COORD_XYZ* dAnchPos, const double* dTagRang, COORD_XYZ &dTagPos);
+    void locEstByMatrix(const int nAnchNum, const COORD_XYZ* dAnchPos, const double* dTagRang, COORD_XYZ *dTagPos);
+    void locEstByLSE(const int nAnchNum, const COORD_XYZ* dAnchPos, const double* dTagRang, COORD_XYZ *dTagPos);
 
 };
 
