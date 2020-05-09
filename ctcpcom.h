@@ -21,7 +21,11 @@ private:
 
 public:
     void writeData(QByteArray buffer);
-private slots:
+    bool isConnected(void);
+//    void readData(void);
+
+
+public slots:
     void readData(void);
 };
 
