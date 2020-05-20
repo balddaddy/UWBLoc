@@ -1,12 +1,14 @@
 #include <QCoreApplication>
 #include <iostream>
 #include <string>
+#include <QString>
 #include <math.h>
 #include <QThread>
 #include "cserialports.h"
 #include "cprocrawdata.h"
 #include "ctaglocalg.h"
 #include "ctcpcom.h"
+#include "public.h"
 
 using namespace std;
 
@@ -53,6 +55,7 @@ int main(int argc, char *argv[])
     dAnch_X = new double[nAnchNum]; memset(dAnch_X,0,sizeof(double)*nAnchNum);
     dAnch_Y = new double[nAnchNum]; memset(dAnch_Y,0,sizeof(double)*nAnchNum);
     dAnch_Z = new double[nAnchNum]; memset(dAnch_Z,0,sizeof(double)*nAnchNum);
+    COORD_XYZ *anchXYZ = new COORD_XYZ[nAnchNum];
     for (int nid = 0; nid < nAnchNum; nid++)
     {
         double dX = 0.0; double dY = 0.0; double dZ = 0.0;
@@ -81,18 +84,48 @@ int main(int argc, char *argv[])
         dAnch_X[nid] = dX;
         dAnch_Y[nid] = dY;
         dAnch_Z[nid] = dZ;
+        anchXYZ[nid].dx = dX;
+        anchXYZ[nid].dy = dY;
+        anchXYZ[nid].dz = dZ;
     }
 
-    /// Step1. Find the devices, read/write & process data
+    /// Step1. Serial Port Thread
     CSerialPorts *device = new CSerialPorts;
     QThread *spIOThread = new QThread;
     device->moveToThread(spIOThread);
     spIOThread->start();
-    ERROR_CODE err = device->initialize();
+    ERROR_CODE err_code = device->initialize();
     cout << "Serial port IO thread starts!" << endl;
 
-    /// Step2. transfer and processing the raw data into ranges between tags/anchers
-//    cout << "End of Processing." << endl;
+    /// Step2. TCP/IP Thread
+    cTCPCom *server = new cTCPCom;
+    QThread *tcpIOThread = new QThread;
+    server->moveToThread(tcpIOThread);
+    tcpIOThread->start();
+    string ipAddr;
+    cout << "Please input server's IP address:";
+    getline(cin, ipAddr);
+    QString ipAddrStr(ipAddr.c_str());
+    int serverPort;
+    cin >> serverPort;
+    err_code = server->initialize(ipAddrStr, serverPort);
+    if (err_code == _ERROR_CODE_SUCC)
+        cout << "TCP/IP IO thread starts!" << endl;
+    else
+        cout << "Server connection failed!" << endl;
+
+    /// Step 3. Process data, localize tags and Kalman Filter tracks
+    cProcRawData *procData = new cProcRawData;
+    QThread *procDataThread = new QThread;
+    procData->moveToThread(procDataThread);
+    procDataThread->start();
+    err_code = procData->initialize(nTagNum,nAnchNum,anchXYZ);
+    if (err_code == _ERROR_CODE_SUCC)
+        cout << "TCP/IP IO thread starts!" << endl;
+    else
+        cout << "Server connection failed!" << endl;
+
+
 //    cProcRawData* procRawData = new cProcRawData;
 //    procRawData->init(1,4);
 //    procRawData->processRawData();
@@ -104,7 +137,7 @@ int main(int argc, char *argv[])
     //    COORD_XYZ *Pos_Tag = new COORD_XYZ[nTagNum];
     //    Pos_Anch[0].dx = 0;     Pos_Anch[0].dy = 0;      Pos_Anch[0].dz = 0;
     //    Pos_Anch[1].dx = 110;   Pos_Anch[1].dy = 10;     Pos_Anch[1].dz = 0;
-    //    Pos_Anch[2].dx = 10;    Pos_Anch[2].dy = 120;    Pos_Anch[2].dz = 0;
+    //    Pos_Anch[2].dx = 10;    Pos_Anch[2].dy = 120;    Pos_Anch[2].dz = 0;更高
     //    Pos_Anch[3].dx = 2;     Pos_Anch[3].dy = 7;      Pos_Anch[3].dz = 130;
 
     //    Pos_Tag[0].dx = 20; Pos_Tag[0].dy = 30; Pos_Tag[0].dz = 25;
@@ -173,6 +206,10 @@ int main(int argc, char *argv[])
     /// Step end: delete all news and quit
     spIOThread->quit();
     spIOThread->wait();
+    delete[] dAnch_X;
+    delete[] dAnch_Y;
+    delete[] dAnch_Z;
+    delete[] anchXYZ;
     delete device;
     delete spIOThread;
 

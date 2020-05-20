@@ -7,28 +7,7 @@
 #include <QStringList>
 #include <QList>
 #include <QMutex>
-
-typedef enum _ERROR_CODE {
-    _ERROR_CODE_SUCC = 0,
-    _ERROR_CODE_FAIL,
-    _ERROR_CODE_NOTFIND,
-    _ERROR_CODE_FIND_SUCC,
-    _ERROR_CODE_OPEN_SUCC,
-    _ERROR_CODE_OPEN_FAIL,
-    _ERROR_CODE_CLOSE_SUCC,
-    _ERROR_CODE_CLOSE_FAIL,
-    _ERROR_CODE_CONNET_FAIL,
-    _ERROR_CODE_CONNET_SUCC,
-    _ERROR_CODE_READ_FAIL,
-    _ERROR_CODE_READ_SUCC,
-    _ERROR_CODE_TIMEOUT
-} ERROR_CODE;
-
-typedef enum _THREAD_STATUS{
-    _THREAD_STATUS_WORKING,
-    _THREAD_STATUS_PAUSE,
-    _THREAD_STATUS_STOP,
-} THREAD_STATUS;
+#include "public.h"
 
 class CSerialPorts : public QObject
 {

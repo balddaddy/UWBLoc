@@ -148,3 +148,25 @@ void cTagLocAlg::locEstByLSE(const int nAnchNum, const COORD_XYZ *dAnchPos, cons
     A = nullptr; D = nullptr;
     return;
 }
+
+
+COORD_XYZ cTagLocAlg::tagLoc(TAG_ANCHOR_DATA data, int tagID, int algID)
+{
+    COORD_XYZ tagLoc;
+    int nAnchNum = data.nAnchNum;
+    COORD_XYZ *anchPos = data.anchXYZ;
+    double *dTagRang = new double[nAnchNum];
+    for (int id = 0; id < nAnchNum; id++)
+        dTagRang[id] = data.getRange(tagID,id);
+    switch (algID) {
+    case 0:
+        locEstByLSE(nAnchNum, anchPos, dTagRang, &tagLoc);
+        break;
+    case 1:
+        locEstByMatrix(nAnchNum, anchPos, dTagRang, &tagLoc);
+        break;
+    default:
+        break;
+    }
+    return tagLoc;
+}

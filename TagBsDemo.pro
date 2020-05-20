@@ -27,7 +27,8 @@ HEADERS += \
     cserialports.h \
     ctaglocalg.h \
     ctagtrackalg.h \
-    ctcpcom.h
+    ctcpcom.h \
+    public.h
 
 
 SOURCES += \

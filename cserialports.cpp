@@ -2,15 +2,6 @@
 
 #include "cserialports.h"
 
-
-#define DEVICE_NAME_WIN ("STMicroelectronics Virtual COM Port")
-#define DEVICE_NAME_LNX ("Virtual COM Port")
-#define DEVICE_NAME_MAC ("Virtual COM Port")
-//#define INST_REPORT_LEN   (65)
-//#define INST_REPORT_LEN_HEADER (20)
-//#define INST_VERSION_LEN  (16)
-//#define INST_CONFIG_LEN   (1)
-
 CSerialPorts::CSerialPorts(void) : m_isPrintingInfo(false), m_threadStatus(_THREAD_STATUS_STOP)
 {
 #ifdef _OS_WIN
@@ -100,17 +91,17 @@ ERROR_CODE CSerialPorts::openDevice(QSerialPort* device)
             device->setFlowControl(QSerialPort::NoFlowControl);
 
             qDebug() << "Connected to" << device->portName() << "" << endl;
-            error_code = _ERROR_CODE_OPEN_SUCC;
+            error_code = _ERROR_CODE_SUCC;
         }
         else {
             qDebug() << "Open device fails! Error:" << device->error() << endl;
             device->close();
-            error_code = _ERROR_CODE_OPEN_FAIL;
+            error_code = _ERROR_CODE_FAIL;
         }
     }
     else {
         qDebug() << "Warning: Device has already been opened!" << endl;
-        error_code = _ERROR_CODE_OPEN_SUCC;
+        error_code = _ERROR_CODE_SUCC;
     }
     return error_code;
 }
@@ -121,12 +112,12 @@ ERROR_CODE CSerialPorts::closeDevice(QSerialPort &device)
     if (device.isOpen())
     {
         device.close();
-        error_code = _ERROR_CODE_OPEN_SUCC;
+        error_code = _ERROR_CODE_SUCC;
         qDebug() << "Device" << device.portName() << "is closed." << endl;
     }
     else
     {
-        error_code = _ERROR_CODE_CLOSE_FAIL;
+        error_code = _ERROR_CODE_FAIL;
         qDebug() << "Device" << device.portName() << "has already been closed." << endl;
     }
     return error_code;
@@ -188,7 +179,7 @@ ERROR_CODE CSerialPorts::initialize(void)
 //    emit workReady();
     if (m_deviceports.isEmpty())
     {
-        err_code = _ERROR_CODE_NOTFIND;
+        err_code = _ERROR_CODE_TIMEOUT;
         qDebug() << "Can't initialize devices." << endl;
     }
     else
@@ -212,7 +203,7 @@ ERROR_CODE CSerialPorts::pauseSerialPort(void)
         THREAD_STATUS status = _THREAD_STATUS_PAUSE;
         setThreadStatus(status);
         err_code = _ERROR_CODE_SUCC;
-        qDebug() << "Paused thread successfully." << endl;
+        qDebug() << "Pause Serial Port thread successfully." << endl;
     }
     else
         err_code = _ERROR_CODE_FAIL;
@@ -227,7 +218,7 @@ ERROR_CODE CSerialPorts::continueSerialPort(void)
         THREAD_STATUS status = _THREAD_STATUS_WORKING;
         setThreadStatus(status);
         err_code = _ERROR_CODE_SUCC;
-        qDebug() << "Continued thread successfully." << endl;
+        qDebug() << "Continue Serial Port thread successfully." << endl;
     }
     else
         err_code = _ERROR_CODE_FAIL;
@@ -271,7 +262,7 @@ void CSerialPorts::doWorks(void)
         {
             if (m_isPrintingInfo)
             {
-                qDebug() << "\r Serial Port working thread has paused." << endl;
+                qDebug() << "\r Serial Port thread has paused." << endl;
             }
         }
         else if(status == _THREAD_STATUS_WORKING)
@@ -282,11 +273,12 @@ void CSerialPorts::doWorks(void)
                 device = m_deviceports.at(id);
                 QByteArray dataToRecv = this->readData(device);
                 m_handleDataFun(dataToRecv);
-                this->writeData(device, m_dataToWrite);
+                if (!m_dataToWrite.isEmpty())
+                    this->writeData(device, m_dataToWrite);
             }
             if (m_isPrintingInfo)
             {
-                qDebug() << "Serial Port working thread is working." << endl;
+                qDebug() << "Serial Port thread is working." << endl;
             }
         }
         m_mutex_threadStaus.lock();
@@ -295,6 +287,6 @@ void CSerialPorts::doWorks(void)
     }
     if (m_isPrintingInfo)
     {
-        qDebug() << "Serial Port working thread quits." << endl;
+        qDebug() << "Serial Port thread quits." << endl;
     }
 }
