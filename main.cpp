@@ -126,92 +126,49 @@ int main(int argc, char *argv[])
         cout << "Server connection failed!" << endl;
 
 
-//    cProcRawData* procRawData = new cProcRawData;
-//    procRawData->init(1,4);
-//    procRawData->processRawData();
-
-    //    // Step3. locate tag based on ranges
-    //    int nAnchNum = 4;
-    //    COORD_XYZ *Pos_Anch = new COORD_XYZ[nAnchNum];
-    //    int nTagNum = 4;
-    //    COORD_XYZ *Pos_Tag = new COORD_XYZ[nTagNum];
-    //    Pos_Anch[0].dx = 0;     Pos_Anch[0].dy = 0;      Pos_Anch[0].dz = 0;
-    //    Pos_Anch[1].dx = 110;   Pos_Anch[1].dy = 10;     Pos_Anch[1].dz = 0;
-    //    Pos_Anch[2].dx = 10;    Pos_Anch[2].dy = 120;    Pos_Anch[2].dz = 0;更高
-    //    Pos_Anch[3].dx = 2;     Pos_Anch[3].dy = 7;      Pos_Anch[3].dz = 130;
-
-    //    Pos_Tag[0].dx = 20; Pos_Tag[0].dy = 30; Pos_Tag[0].dz = 25;
-    //    Pos_Tag[1].dx = 50; Pos_Tag[1].dy = 25; Pos_Tag[1].dz = 65;
-    //    Pos_Tag[2].dx = 70; Pos_Tag[2].dy = 40; Pos_Tag[2].dz = 55;
-    //    Pos_Tag[3].dx = 40; Pos_Tag[3].dy = 80; Pos_Tag[3].dz = 0;
-
-    //    cTagLocAlg* tagLoc = new cTagLocAlg;
-    //    COORD_XYZ* est_Tag_Pos = new COORD_XYZ[nTagNum];
-
-    //    for(int id = 0; id < nTagNum; id++)
-    //    {
-    //        double* dRang = new double[nAnchNum];
-    //        memset(dRang, 0, sizeof(double)*nAnchNum);
-    //        for(int iid = 0; iid < nAnchNum; iid++)
-    //        {
-    //            double dXX = (Pos_Tag[id].dx - Pos_Anch[iid].dx)*(Pos_Tag[id].dx - Pos_Anch[iid].dx);
-    //            double dYY = (Pos_Tag[id].dy - Pos_Anch[iid].dy)*(Pos_Tag[id].dy - Pos_Anch[iid].dy);
-    //            double dZZ = (Pos_Tag[id].dz - Pos_Anch[iid].dz)*(Pos_Tag[id].dz - Pos_Anch[iid].dz);
-    //            dRang[iid] = sqrt(dXX+dYY+dZZ);
-    //        }
-    //        est_Tag_Pos[id].dx = 0.; est_Tag_Pos[id].dy = 0.; est_Tag_Pos[id].dz = 0.;
-    ////        tagLoc->locEstByMatrix(nAnchNum, Pos_Anch, dRang, est_Tag_Pos+id);
-    //        tagLoc->locEstByLSE(nAnchNum, Pos_Anch, dRang, est_Tag_Pos+id);
-
-    //        cout << " The real tag position of Tag" << id << " is: " << Pos_Tag[id].dx <<"\t" << Pos_Tag[id].dy <<"\t" << Pos_Tag[id].dz << endl;
-    //        cout << " The estimated tag position of Tag" <<id << " is: " << est_Tag_Pos[id].dx <<"\t" << est_Tag_Pos[id].dy <<"\t" << est_Tag_Pos[id].dz << endl;
-    //        cout << " The error is: " << abs(Pos_Tag[id].dx - est_Tag_Pos[id].dx) <<"\t"
-    //             << abs(Pos_Tag[id].dy - est_Tag_Pos[id].dy) <<"\t"
-    //             << abs(Pos_Tag[id].dz - est_Tag_Pos[id].dz) << endl;
-    //    }
-
-    //    delete  tagLoc;
-    //    delete [] est_Tag_Pos;
-    //    delete [] Pos_Anch;
-    //    delete [] Pos_Tag;
-
-//    // Step4. upload results to server
-//    cTCPCom *newConnection = new cTCPCom;
-//    bool isConnected;
-//    do{
-//        cout << "Haven't connected to server yet!" << endl;
-//        isConnected = newConnection->isConnected();
-//        QThread::sleep(2);
-//    }
-//    while(!isConnected);
-//    QByteArray msg("Hello, server!");
-//    for (int id = 0; id < 5; id++){
-//        newConnection->writeData(msg);
-//        QThread::sleep(2);
-//    }
-
     /// Step 4 Wait and Respond Next Command
     bool isQuit = false;
     do{
-        cout << "Please input the command: " << endl;
+        cout << "Please input the command(s=switch print; p=pause; c=continue; q=quit): " << endl;
         char tmpCmd[10];
         QByteArray cmd; cmd.clear();
         cin >> tmpCmd;
         cmd.append(tmpCmd);
-        if (cmd == "q")
+        if (cmd == "s")
+        {
+            device->switchPrintOnOff();
+            server->switchPrintOnOff();
+            procData->switchPrintOnOff();
+        }
+        else if (cmd == "p")
+        {
+            device->pauseSerialPort();
+            server->pauseConnection();
+            procData->pauseThread();
+        }
+        else if (cmd == "c")
+        {
+            device->continueSerialPort();
+            server->continueConnection();
+            procData->continueThread();
+        }
+        else if (cmd == "q")
             isQuit = true;
+        else
+            cout << "The command is undefined." << endl;
     }
     while (!isQuit);
 
-    /// Step end: delete all news and quit
+    /// Step 5: delete all news and quit
     spIOThread->quit();
     spIOThread->wait();
     delete[] dAnch_X;
     delete[] dAnch_Y;
     delete[] dAnch_Z;
     delete[] anchXYZ;
-    delete device;
-    delete spIOThread;
+    delete device;     delete spIOThread;
+    delete server;     delete tcpIOThread;
+    delete procData;   delete procDataThread;
 
     cout << "=====Game Over=====" << endl;
     return coreApplication.exec();

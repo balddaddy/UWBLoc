@@ -168,6 +168,10 @@ void CSerialPorts::switchPrintOnOff(void)
 {
     m_mutex_PrintStatus.lock();
     m_isPrintingInfo = !m_isPrintingInfo;
+    if (m_isPrintingInfo)
+        qDebug() << "Printing information function is on" << endl;
+    else
+        qDebug() << "Printing information function is off" << endl;
     m_mutex_PrintStatus.unlock();
 }
 
