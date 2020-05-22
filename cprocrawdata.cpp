@@ -4,13 +4,12 @@
 #include "cprocrawdata.h"
 
 using namespace std;
-QMutex g_rawDataMutex;
 
 cProcRawData::cProcRawData():
     m_isPrintingInfo(false), m_threadStatus(_THREAD_STATUS_STOP),
-    m_tagHead_raw("mr"), m_tagHead_loc("mc"), m_anchHead("ma")
+    m_tagHead_raw("mr"), m_tagHead_loc("mc"), m_anchHead("ma"),
+    m_handleDataFun(nullptr), m_tcpPort(nullptr)
 {
-    m_rawData.clear();
     m_tagLocer = new cTagLocAlg;
     m_tagTracker = new cTagTrackAlg;
     connect(this, SIGNAL(workReady()), this, SLOT(doWorks()));
@@ -20,7 +19,6 @@ cProcRawData::~cProcRawData()
 {
     m_threadStatus = _THREAD_STATUS_STOP;
     m_processedData.destroy();
-    m_rawData.clear();
     m_tagHead_raw.clear(); m_tagHead_loc.clear(); m_anchHead.clear();
     delete m_tagLocer;
     delete m_tagTracker;
@@ -103,13 +101,18 @@ ERROR_CODE cProcRawData::initialize(const int nTagNum, const int nAnchNum, const
     return  err_code;
 }
 
-void cProcRawData::addRawData(QByteArray rawData)
+ERROR_CODE cProcRawData::addRawData(QByteArray rawData, cProcRawData* thisClass)
 {
-    if (rawData.isEmpty())
-        return;
-    m_mutex_rawData.lock();
-    m_rawData.append(rawData);
-    m_mutex_rawData.unlock();
+    ERROR_CODE err_code;
+    if (rawData.isEmpty()){
+        err_code = _ERROR_CODE_FAIL;
+        return err_code;
+    }
+    thisClass->m_mutex_rawData.lock();
+    thisClass->m_rawData.append(rawData);
+    thisClass->m_mutex_rawData.unlock();
+    err_code = _ERROR_CODE_SUCC;
+    return err_code;
 }
 
 
@@ -166,6 +169,12 @@ ERROR_CODE cProcRawData::stopThread(void)
     else
         err_code = _ERROR_CODE_FAIL;
     return err_code;
+}
+
+void cProcRawData::setHandleDataFun(ERROR_CODE (*handleDataFun)(TAG_ANCHOR_DATA&, cTCPCom*), cTCPCom* tcpPort)
+{
+    m_handleDataFun = handleDataFun;
+    m_tcpPort = tcpPort;
 }
 
 void cProcRawData::doWorks(void)
@@ -228,6 +237,7 @@ void cProcRawData::doWorks(void)
                     tagXYZ = m_tagLocer->tagLoc(m_processedData, nTagID);
                     m_processedData.setTagXYZ(nTagID, tagXYZ);
                     m_tagTracker->KalmFilter(m_processedData, nTagID);
+                    m_handleDataFun(m_processedData, m_tcpPort);
                     break;
                 case _DATA_TYPE_TAG_RAW:
                     nTmpIndex = data.indexOf(":");
@@ -256,6 +266,7 @@ void cProcRawData::doWorks(void)
                     tagXYZ = m_tagLocer->tagLoc(m_processedData, nTagID);
                     m_processedData.setTagXYZ(nTagID, tagXYZ);
                     m_tagTracker->KalmFilter(m_processedData, nTagID);
+                    m_handleDataFun(m_processedData, m_tcpPort);
                     break;
                 case _DATA_TYPE_ANCHOR:
                     cout << "anchor data" << endl;

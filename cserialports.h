@@ -8,6 +8,7 @@
 #include <QList>
 #include <QMutex>
 #include "public.h"
+#include "cprocrawdata.h"
 
 class CSerialPorts : public QObject
 {
@@ -22,13 +23,14 @@ private:
     QSerialPort::BaudRate m_baudrate;
     QList<QSerialPort*> m_deviceports;
     QList<QSerialPortInfo> m_ports_info;
-    QByteArray m_dataToWrite;
     QStringList m_ports_list;
+    QByteArray m_dataToWrite;
     QMutex m_mutex_threadStaus;
 	QMutex m_mutex_PrintStatus;
     QMutex m_mutex_dataToWrite;
 
-    ERROR_CODE (*m_handleDataFun)(QByteArray data);
+    ERROR_CODE (*m_handleDataFun)(QByteArray, cProcRawData*);
+    cProcRawData* m_procDataDevice;
 
 private:
     void findDevices(void); // find all tags and BSs
@@ -51,7 +53,7 @@ public:
 
     void setDataToSend(QByteArray data);
 
-    void setHandleDataFun(ERROR_CODE (*handleDataFun)(QByteArray data));
+    void setHandleDataFun(ERROR_CODE (*handleDataFun)(QByteArray, cProcRawData*), cProcRawData* device);
 
 public slots:
     void doWorks(void);

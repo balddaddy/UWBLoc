@@ -29,6 +29,7 @@ typedef struct _COORD_XYZ{
 } COORD_XYZ;
 
 typedef  struct _TAG_ANCHOR_DATA {
+    bool isOutputReady;
     int nTagNum;
     int nAnchNum;
     COORD_XYZ *anchXYZ;
@@ -37,6 +38,7 @@ typedef  struct _TAG_ANCHOR_DATA {
     int*  nTrackID;
     COORD_XYZ **tagXYZ;
     _TAG_ANCHOR_DATA(void){
+        isOutputReady = false;
         nTagNum = 0;
         nAnchNum = 0;
         anchXYZ = nullptr;

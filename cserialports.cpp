@@ -2,7 +2,8 @@
 
 #include "cserialports.h"
 
-CSerialPorts::CSerialPorts(void) : m_isPrintingInfo(false), m_threadStatus(_THREAD_STATUS_STOP)
+CSerialPorts::CSerialPorts(void) : m_isPrintingInfo(false), m_threadStatus(_THREAD_STATUS_STOP),
+    m_handleDataFun(nullptr), m_procDataDevice(nullptr)
 {
 #ifdef _OS_WIN
             m_baudrate = QSerialPort::Baud115200;
@@ -30,12 +31,11 @@ CSerialPorts::~CSerialPorts(void)
     m_deviceports.clear();
     m_ports_info.clear();
     m_ports_list.clear();
+    m_dataToWrite.clear();
 }
 
 void CSerialPorts::findDevices(void)
 {
-    m_threadStatus = _THREAD_STATUS_STOP;
-
     foreach(const QSerialPortInfo &_port, QSerialPortInfo::availablePorts())
     {
         if((_port.description()==DEVICE_NAME_WIN) || (_port.description()==DEVICE_NAME_LNX) || (_port.description()==DEVICE_NAME_MAC))
@@ -90,7 +90,7 @@ ERROR_CODE CSerialPorts::openDevice(QSerialPort* device)
             device->setStopBits(QSerialPort::OneStop);
             device->setFlowControl(QSerialPort::NoFlowControl);
 
-            qDebug() << "Connected to" << device->portName() << "" << endl;
+            qDebug() << "Opened " << device->portName() << "" << endl;
             error_code = _ERROR_CODE_SUCC;
         }
         else {
@@ -106,6 +106,7 @@ ERROR_CODE CSerialPorts::openDevice(QSerialPort* device)
     return error_code;
 }
 
+////////Frome here
 ERROR_CODE CSerialPorts::closeDevice(QSerialPort &device)
 {
     ERROR_CODE error_code;
@@ -250,9 +251,10 @@ void CSerialPorts::setDataToSend(QByteArray data)
     m_mutex_dataToWrite.unlock();
 }
 
-void CSerialPorts::setHandleDataFun(ERROR_CODE (*handleDataFun)(QByteArray))
+void CSerialPorts::setHandleDataFun(ERROR_CODE (*handleDataFun)(QByteArray, cProcRawData*), cProcRawData *device)
 {
     m_handleDataFun = handleDataFun;
+    m_procDataDevice = device;
 }
 
 void CSerialPorts::doWorks(void)
@@ -276,7 +278,7 @@ void CSerialPorts::doWorks(void)
                 QSerialPort* device = nullptr;
                 device = m_deviceports.at(id);
                 QByteArray dataToRecv = this->readData(device);
-                m_handleDataFun(dataToRecv);
+                m_handleDataFun(dataToRecv,m_procDataDevice);
                 if (!m_dataToWrite.isEmpty())
                     this->writeData(device, m_dataToWrite);
             }

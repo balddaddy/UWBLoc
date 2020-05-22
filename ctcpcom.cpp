@@ -54,13 +54,19 @@ QByteArray cTCPCom::readData(void)
     return  buffer;
 }
 
-void cTCPCom::writeData(QByteArray buffer)
+ERROR_CODE cTCPCom::writeData(QByteArray buffer)
 {
+    ERROR_CODE err;
     if (buffer.isEmpty())
-        return;
+    {
+        err = _ERROR_CODE_FAIL;
+        return err;
+    }
     m_tcpSocket->write(buffer.data(),buffer.size());
     if (m_isPrintingInfo)
         cout << "Send data:\t" << buffer.data() << endl;
+    err = _ERROR_CODE_SUCC;
+    return err;
 }
 
 void cTCPCom::setThreadStatus(THREAD_STATUS &status)
@@ -146,6 +152,61 @@ ERROR_CODE cTCPCom::stopConnection(void)
     return err_code;
 }
 
+ERROR_CODE cTCPCom::setDataToSend(TAG_ANCHOR_DATA& data, cTCPCom* thisTcp)
+{
+    ERROR_CODE err;
+    if (!data.isOutputReady)
+    {
+        err = _ERROR_CODE_FAIL;
+        return err;
+    }
+    for (int id = 0; id < data.nTagNum; id++)
+    {
+        QString str;
+        str.setNum(id);
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+        str = ".";
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+
+        str.setNum(data.tagXYZ[id][0].dx);
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+        str = ".";
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+
+        str.setNum(data.tagXYZ[id][0].dy);
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+        str = ".";
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+
+        str.setNum(data.tagXYZ[id][0].dz);
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+        str = ".";
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+
+        str = "*";
+        thisTcp->m_mutex_dataToWrite.lock();
+        thisTcp->m_dataToWrite.append(str);
+        thisTcp->m_mutex_dataToWrite.unlock();
+    }
+    err = _ERROR_CODE_SUCC;
+    return err;
+}
 
 void cTCPCom::doWorks(void)
 {
@@ -164,9 +225,11 @@ void cTCPCom::doWorks(void)
         else if(status == _THREAD_STATUS_WORKING)
         {
             QByteArray dataToRecv = this->readData();
-            m_handleDataFun(dataToRecv);
+//            m_handleDataFun(dataToRecv);
+            m_mutex_dataToWrite.lock();
             if (!m_dataToWrite.isEmpty())
                 this->writeData(m_dataToWrite);
+            m_mutex_dataToWrite.unlock();
             if (m_isPrintingInfo)
             {
                 qDebug() << "TCP/IP connection thread is working." << endl;

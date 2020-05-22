@@ -34,7 +34,7 @@ private:
 private:
     ERROR_CODE connectToServer(void);
     QByteArray readData(void);
-    void writeData(QByteArray buffer);
+    ERROR_CODE writeData(QByteArray buffer);
     void setThreadStatus(THREAD_STATUS &status);
 
 public:
@@ -47,7 +47,7 @@ public:
     ERROR_CODE continueConnection(void);
     ERROR_CODE stopConnection(void);
 
-    void setDataToSend(QByteArray data);
+    static ERROR_CODE setDataToSend(TAG_ANCHOR_DATA& data, cTCPCom* thisTcp);
 
     void setHandleDataFun(ERROR_CODE (*handleDataFun)(QByteArray data));
 

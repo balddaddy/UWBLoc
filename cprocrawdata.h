@@ -7,6 +7,7 @@
 #include "public.h"
 #include "ctaglocalg.h"
 #include "ctagtrackalg.h"
+#include "ctcpcom.h"
 
 class cProcRawData : public QObject
 {
@@ -30,20 +31,25 @@ private:
 	
     cTagLocAlg *m_tagLocer;
     cTagTrackAlg *m_tagTracker;
+
+    ERROR_CODE (*m_handleDataFun)(TAG_ANCHOR_DATA&, cTCPCom*);
+    cTCPCom* m_tcpPort;
 private:
     void setThreadStatus(THREAD_STATUS &status);
     ERROR_CODE cutRawData(QByteArray& output, DATA_TYPE &dataType);
     DATA_TYPE judgeDataType(QByteArray& data, int &index);
 
 public:
-    void addRawData(QByteArray rawData);
     void switchPrintOnOff(void);
+
+    static ERROR_CODE addRawData(QByteArray rawData, cProcRawData *thisClass);
 	
     ERROR_CODE initialize(void);
     ERROR_CODE pauseThread(void);
     ERROR_CODE continueThread(void);
     ERROR_CODE stopThread(void);
 
+    void setHandleDataFun(ERROR_CODE (*handleDataFun)(TAG_ANCHOR_DATA&, cTCPCom*), cTCPCom* tcpPort);
 public slots:
     void doWorks(void);
 	
