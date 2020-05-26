@@ -40,6 +40,8 @@ private:
     void writeData(QSerialPort* device, const QByteArray &data);	
 
     void setThreadStatus(THREAD_STATUS &status);
+	THREAD_STATUS getThreadStatus(void);
+    bool getPrintStatus(void);
 
 public:
     int getDeviceNum(void);

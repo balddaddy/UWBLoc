@@ -7,13 +7,12 @@ using namespace std;
 cTCPCom::cTCPCom()
     :m_isPrintingInfo(false),
       m_threadStatus(_THREAD_STATUS_STOP),
-      m_tcpSocket(new QTcpSocket(this))
+      m_tcpSocket(new QTcpSocket(this)),
+      m_handleDataFun(nullptr),
+      m_procDataDevice(nullptr)
 
 {
-    m_in.setDevice(m_tcpSocket);
-    m_in.setVersion(QDataStream::Qt_5_0);
-    m_out.setDevice(m_tcpSocket);
-    m_out.setVersion(QDataStream::Qt_5_0);
+    m_dataToWrite.clear();
     connect(this, SIGNAL(workReady()), this, SLOT(doWorks()));
 }
 
@@ -21,6 +20,9 @@ cTCPCom::~cTCPCom()
 {
     m_tcpSocket->abort();
     delete m_tcpSocket;
+    m_dataToWrite.clear();
+    m_handleDataFun = nullptr;
+    m_procDataDevice = nullptr;
 }
 
 ERROR_CODE cTCPCom::connectToServer(void)
@@ -43,12 +45,12 @@ QByteArray cTCPCom::readData(void)
     if (succ)
     {
         buffer = m_tcpSocket->readAll();
-        if (m_isPrintingInfo)
+        if (this->getPrintStatus())
             cout << "Receive data:\t" << buffer.data() << endl;
     }
     else
     {
-        if (m_isPrintingInfo)
+        if (this->getPrintStatus())
             cout << "Receive data timeout." << endl;
     }
     return  buffer;
@@ -63,7 +65,7 @@ ERROR_CODE cTCPCom::writeData(QByteArray buffer)
         return err;
     }
     m_tcpSocket->write(buffer.data(),buffer.size());
-    if (m_isPrintingInfo)
+    if (this->getPrintStatus())
         cout << "Send data:\t" << buffer.data() << endl;
     err = _ERROR_CODE_SUCC;
     return err;
@@ -74,6 +76,24 @@ void cTCPCom::setThreadStatus(THREAD_STATUS &status)
     m_mutex_threadStaus.lock();
     m_threadStatus = status;
     m_mutex_threadStaus.unlock();
+}
+
+THREAD_STATUS cTCPCom::getThreadStatus(void)
+{
+    THREAD_STATUS status;
+    m_mutex_threadStaus.lock();
+    status = m_threadStatus;
+    m_mutex_threadStaus.unlock();
+    return status;
+}
+
+bool cTCPCom::getPrintStatus(void)
+{
+    bool isPrint;
+    m_mutex_PrintStatus.lock();
+    isPrint = this->m_isPrintingInfo;
+    m_mutex_PrintStatus.unlock();
+    return isPrint;
 }
 
 bool cTCPCom::isConnected(void)
@@ -87,11 +107,11 @@ void cTCPCom::switchPrintOnOff(void)
 {
     m_mutex_PrintStatus.lock();
     m_isPrintingInfo = !m_isPrintingInfo;
-    if (m_isPrintingInfo)
+    m_mutex_PrintStatus.unlock();
+    if (this->getPrintStatus())
         qDebug() << "Printing information function is on" << endl;
     else
         qDebug() << "Printing information function is off" << endl;
-    m_mutex_PrintStatus.unlock();
 }
 
 ERROR_CODE cTCPCom::initialize(QString serverIP, int serverPort)
@@ -99,7 +119,8 @@ ERROR_CODE cTCPCom::initialize(QString serverIP, int serverPort)
     ERROR_CODE err_code;
     if (serverPort != 1888)
         err_code = _ERROR_CODE_FAIL;
-    m_hostAddr.setAddress(serverIP);
+    if (!m_hostAddr.setAddress(serverIP))
+        err_code = _ERROR_CODE_FAIL;
     m_hostPort = serverPort;
     err_code = this->connectToServer();
     if (err_code == _ERROR_CODE_SUCC)
@@ -217,7 +238,7 @@ void cTCPCom::doWorks(void)
     {
         if (status == _THREAD_STATUS_PAUSE)
         {
-            if (m_isPrintingInfo)
+            if (this->getPrintStatus())
             {
                 qDebug() << "\r TCP/IP connection thread has paused." << endl;
             }
@@ -230,7 +251,7 @@ void cTCPCom::doWorks(void)
             if (!m_dataToWrite.isEmpty())
                 this->writeData(m_dataToWrite);
             m_mutex_dataToWrite.unlock();
-            if (m_isPrintingInfo)
+            if (this->getPrintStatus())
             {
                 qDebug() << "TCP/IP connection thread is working." << endl;
             }
@@ -239,7 +260,7 @@ void cTCPCom::doWorks(void)
         status = m_threadStatus;
         m_mutex_threadStaus.unlock();
     }
-    if (m_isPrintingInfo)
+    if (this->getPrintStatus())
     {
         qDebug() << "TCP/IP connection thread quits." << endl;
     }

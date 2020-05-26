@@ -2,6 +2,8 @@
 #define PUBLIC_H
 
 #include <string.h>
+#include <QJsonArray>
+#include <QByteArray>
 
 typedef enum _ERROR_CODE {
     _ERROR_CODE_SUCC = 0,
@@ -146,5 +148,8 @@ typedef  struct _TAG_ANCHOR_DATA {
 #define DEVICE_NAME_WIN ("STMicroelectronics Virtual COM Port")
 #define DEVICE_NAME_LNX ("Virtual COM Port")
 #define DEVICE_NAME_MAC ("Virtual COM Port")
+
+QByteArray transJson2Bytearray(const QJsonArray &array);
+QJsonArray transBytearray2Json(const QByteArray &array);
 
 #endif // PUBLIC_H

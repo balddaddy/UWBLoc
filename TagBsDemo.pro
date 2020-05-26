@@ -39,7 +39,8 @@ SOURCES += \
         ctaglocalg.cpp \
         ctagtrackalg.cpp \
         ctcpcom.cpp \
-        main.cpp
+        main.cpp \
+        public.cpp
 
 TRANSLATIONS += \
     TagBsDemo_zh_CN.ts
