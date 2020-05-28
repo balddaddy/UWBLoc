@@ -6,7 +6,6 @@
 #include <QtSerialPort/QSerialPortInfo>
 #include <QStringList>
 #include <QList>
-#include <QMutex>
 #include "public.h"
 #include "cprocrawdata.h"
 
@@ -18,7 +17,6 @@ public:
     ~CSerialPorts(void);
 
 private:
-    bool m_isPrintingInfo;
     THREAD_STATUS m_threadStatus;
     QSerialPort::BaudRate m_baudrate;
     QList<QSerialPort*> m_deviceports;
@@ -26,7 +24,6 @@ private:
     QStringList m_ports_list;
     QByteArray m_dataToWrite;
     QMutex m_mutex_threadStaus;
-	QMutex m_mutex_PrintStatus;
     QMutex m_mutex_dataToWrite;
 
     ERROR_CODE (*m_handleDataFun)(QByteArray, cProcRawData*);
@@ -40,13 +37,10 @@ private:
     void writeData(QSerialPort* device, const QByteArray &data);	
 
     void setThreadStatus(THREAD_STATUS &status);
-	THREAD_STATUS getThreadStatus(void);
-    bool getPrintStatus(void);
+    THREAD_STATUS getThreadStatus(void);
 
 public:
     int getDeviceNum(void);
-	
-    void switchPrintOnOff(void);
 	
     ERROR_CODE initialize(void);
     ERROR_CODE pauseSerialPort(void);

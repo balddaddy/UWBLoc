@@ -4,6 +4,9 @@
 #include <string.h>
 #include <QJsonArray>
 #include <QByteArray>
+#include <QJsonObject>
+#include <QMutex>
+#include <bits/stdc++.h>
 
 typedef enum _ERROR_CODE {
     _ERROR_CODE_SUCC = 0,
@@ -15,6 +18,7 @@ typedef enum _THREAD_STATUS{
     _THREAD_STATUS_WORKING,
     _THREAD_STATUS_PAUSE,
     _THREAD_STATUS_STOP,
+    _THREAD_STATUS_END,
 } THREAD_STATUS;
 
 typedef enum _DATA_TYPE {
@@ -38,6 +42,7 @@ typedef  struct _TAG_ANCHOR_DATA {
     double** dRangArray;
     double** dTime;
     int*  nTrackID;
+    int*  nTagID;
     COORD_XYZ **tagXYZ;
     _TAG_ANCHOR_DATA(void){
         isOutputReady = false;
@@ -47,6 +52,7 @@ typedef  struct _TAG_ANCHOR_DATA {
         dRangArray = nullptr;
         dTime = nullptr;
         nTrackID = nullptr;
+        nTagID = nullptr;
         tagXYZ = nullptr;
     };
     void initial(const int _nTag_Num, const int _nAnch_Num){
@@ -57,6 +63,7 @@ typedef  struct _TAG_ANCHOR_DATA {
         tagXYZ = new COORD_XYZ*[nTagNum];
         dTime = new double*[nTagNum];
         nTrackID = new int[nTagNum];
+        nTagID = new int[nTagNum];
         for (int nid = 0; nid < nTagNum; nid++)
         {
             tagXYZ[nid] = new COORD_XYZ[10];
@@ -65,6 +72,7 @@ typedef  struct _TAG_ANCHOR_DATA {
             memset(dTime[nid], 0, sizeof(double)*10);
             nTrackID[nid] = 1;
         }
+        memset(nTagID, 0, sizeof(int)*nTagNum);
         memset(tagXYZ, 0, sizeof(double)*nTagNum);
         dRangArray = new double*[nAnchNum];
         for (int nid = 0; nid < nAnchNum; nid++)
@@ -141,15 +149,37 @@ typedef  struct _TAG_ANCHOR_DATA {
     }
 } TAG_ANCHOR_DATA;
 
+#define _TCP_PORT    1888
+
 #define _MAX_TAG_NUM 1000
 #define _MAX_ANCHOR_NUM 100
 #define _RAW_DATA_PIECE_LEN  65
+
+#define _JSON_SEND2SERVER_ID  "id"
+#define _JSON_SEND2SERVER_X   "x"
+#define _JSON_SEND2SERVER_Y   "y"
+#define _JSON_SEND2SERVER_Z   "z"
+
+#define _RAWDATA_TAG_HEAD_RAW   "mr"
+#define _RAWDATA_TAG_HEAD_LOC   "mc"
+#define _RAWDATA_ANCH_HEAD      "ma"
+
 
 #define DEVICE_NAME_WIN ("STMicroelectronics Virtual COM Port")
 #define DEVICE_NAME_LNX ("Virtual COM Port")
 #define DEVICE_NAME_MAC ("Virtual COM Port")
 
+#define _PI              (2*std::acos(0.0))
+#define _MAX_INT_NUM     INT_MAX
+#define _MIN_INT_NUM     INT_MIN
+
+extern QMutex _mutex_Print_Info_Status;
+extern bool _b_Print_Info_Status;
+
 QByteArray transJson2Bytearray(const QJsonArray &array);
 QJsonArray transBytearray2Json(const QByteArray &array);
+
+bool getPrintStatus(void);
+void switchPrintOnOff(void);
 
 #endif // PUBLIC_H

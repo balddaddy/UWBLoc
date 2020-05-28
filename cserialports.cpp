@@ -2,8 +2,10 @@
 
 #include "cserialports.h"
 
-CSerialPorts::CSerialPorts(void) : m_isPrintingInfo(false), m_threadStatus(_THREAD_STATUS_STOP),
-    m_handleDataFun(nullptr), m_procDataDevice(nullptr)
+CSerialPorts::CSerialPorts(void) :
+    m_threadStatus(_THREAD_STATUS_STOP),
+    m_handleDataFun(nullptr),
+    m_procDataDevice(nullptr)
 {
 #ifdef _OS_WIN
             m_baudrate = QSerialPort::Baud115200;
@@ -20,6 +22,12 @@ CSerialPorts::CSerialPorts(void) : m_isPrintingInfo(false), m_threadStatus(_THRE
 
 CSerialPorts::~CSerialPorts(void)
 {
+    THREAD_STATUS status = _THREAD_STATUS_STOP;
+    this->setThreadStatus(status);
+    while (this->getThreadStatus()!=_THREAD_STATUS_END)
+    {
+        // wait for the thread to end.
+    }
     for (int id = 0; id < m_deviceports.size(); id++)
     {
         if (m_deviceports[id]->isOpen())
@@ -47,10 +55,10 @@ void CSerialPorts::findDevices(void)
             {
                 m_ports_info += _port;
                 m_ports_list += _port.portName();
-                QSerialPort* tmpDevice = new QSerialPort(nullptr);
+                QSerialPort* tmpDevice = new QSerialPort(this);
                 tmpDevice->setPort(_port);
                 m_deviceports += tmpDevice;
-                if (this->getPrintStatus()){
+                if (getPrintStatus()){
                     qDebug() << "Find a new device: "
                              << _port.portName() << _port.vendorIdentifier() << _port.productIdentifier()
                              << _port.hasProductIdentifier() << _port.hasVendorIdentifier() << _port.isBusy()
@@ -68,7 +76,7 @@ void CSerialPorts::findDevices(void)
         qDebug() << "Can't find any devices!" << endl;
     }
     else {
-        if (this->getPrintStatus())
+        if (getPrintStatus())
         {
             qDebug() << "All the devices are as following: " << endl;
             foreach (const QSerialPortInfo &_port, m_ports_info)
@@ -132,7 +140,7 @@ QByteArray CSerialPorts::readData(QSerialPort* device)
     while(device->waitForReadyRead(50)){
         data = device->readAll();
     }
-    if (data.isEmpty() && this->getPrintStatus())
+    if (data.isEmpty() && getPrintStatus())
     {
         qDebug() << "Can't receivie any data from Device" << device->portName() << "." << endl;
     }
@@ -146,11 +154,11 @@ void CSerialPorts::writeData(QSerialPort* device, const QByteArray &data)
     if (device->isOpen())
     {
         device->write(data);
-        if (this->getPrintStatus())
+        if (getPrintStatus())
             qDebug() << "Sending msg to devices successfully!" << endl;
     }
     else
-        if (this->getPrintStatus())
+        if (getPrintStatus())
             qDebug() << "Sending msg to devices failed!" << endl;
 }
 
@@ -170,47 +178,32 @@ THREAD_STATUS CSerialPorts::getThreadStatus(void)
     return status;
 }
 
-bool CSerialPorts::getPrintStatus(void)
-{
-    bool isPrint;
-    m_mutex_PrintStatus.lock();
-    isPrint = this->m_isPrintingInfo;
-    m_mutex_PrintStatus.unlock();
-    return isPrint;
-}
-
 int CSerialPorts::getDeviceNum(void)
 {
     return  m_deviceports.length();
-}
-
-void CSerialPorts::switchPrintOnOff(void)
-{
-    m_mutex_PrintStatus.lock();
-    m_isPrintingInfo = !m_isPrintingInfo;
-    m_mutex_PrintStatus.unlock();
-    if (this->getPrintStatus())
-        qDebug() << "Printing information function is on" << endl;
-    else
-        qDebug() << "Printing information function is off" << endl;
 }
 
 ERROR_CODE CSerialPorts::initialize(void)
 {
     ERROR_CODE err_code;    
     THREAD_STATUS status = _THREAD_STATUS_STOP;
+    this->setThreadStatus(status);
+    while (this->getThreadStatus() != _THREAD_STATUS_END)
+    {
+        // wait untill the thread is ended.
+    }
     findDevices();
     if (m_deviceports.isEmpty())
     {
         err_code = _ERROR_CODE_TIMEOUT;
-        qDebug() << "Can't initialize devices." << endl;
+        qDebug() << "Can't initialize serial port." << endl;
     }
     else
     {
         for (int id = 0; id < m_deviceports.length(); id++)
         {
             err_code = openDevice(m_deviceports.at(id));
-            if ((err_code == _ERROR_CODE_FAIL) && this->getPrintStatus())
+            if ((err_code == _ERROR_CODE_FAIL) && getPrintStatus())
                 qDebug() << "Can't open device " << m_ports_info.at(id).portName() << endl;
             if (err_code == _ERROR_CODE_SUCC)
             {
@@ -223,7 +216,7 @@ ERROR_CODE CSerialPorts::initialize(void)
     {
         this->setThreadStatus(status);
         emit workReady();
-        if (this->getPrintStatus())
+        if (getPrintStatus())
             qDebug() << "Emitted thread working signal of serial port." << endl;
     }
     return err_code;
@@ -266,7 +259,7 @@ ERROR_CODE CSerialPorts::stopSerialPort(void)
     if ((status == _THREAD_STATUS_PAUSE) || (status = _THREAD_STATUS_WORKING))
     {
         status = _THREAD_STATUS_STOP;
-        setThreadStatus(status);
+        this->setThreadStatus(status);
         err_code = _ERROR_CODE_SUCC;
     }
     else
@@ -296,7 +289,7 @@ void CSerialPorts::doWorks(void)
     {
         if (status == _THREAD_STATUS_PAUSE)
         {
-            if ((this->getPrintStatus()) && (nPausePrintCount < 5))
+            if (getPrintStatus() && (nPausePrintCount < 5))
             {
                 nPausePrintCount++;
                 qDebug() << "\r Serial Port thread paused." << endl;
@@ -317,15 +310,17 @@ void CSerialPorts::doWorks(void)
             }
             m_dataToWrite.clear();
             m_mutex_dataToWrite.unlock();
-            if (this->getPrintStatus())
+            if (getPrintStatus())
             {
                 qDebug() << "Serial Port thread is working." << endl;
             }
         }
         status = this->getThreadStatus();
     }
-    if (this->getPrintStatus())
+    if (getPrintStatus())
     {
         qDebug() << "Serial Port thread quits." << endl;
     }
+    status = _THREAD_STATUS_END;
+    this->setThreadStatus(status);
 }

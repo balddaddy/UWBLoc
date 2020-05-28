@@ -23,6 +23,7 @@ DEFINES += _OS_WIN
 HEADERS += \
     ccmath.h \
     ccsp.h \
+    cproccookeddata.h \
     cprocrawdata.h \
     cserialports.h \
     ctaglocalg.h \
@@ -34,6 +35,7 @@ HEADERS += \
 SOURCES += \
         ccmath.cpp \
         ccsp.cpp \
+        cproccookeddata.cpp \
         cprocrawdata.cpp \
         cserialports.cpp \
         ctaglocalg.cpp \

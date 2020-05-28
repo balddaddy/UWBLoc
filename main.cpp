@@ -8,6 +8,7 @@
 #include "cprocrawdata.h"
 #include "ctaglocalg.h"
 #include "ctcpcom.h"
+#include "cproccookeddata.h"
 #include "public.h"
 
 using namespace std;
@@ -26,8 +27,6 @@ int main(int argc, char *argv[])
 
     /// Step0. Initialize the program
     int nAnchNum = 0; int nTagNum = 0;
-//    double *dAnch_X, *dAnch_Y, *dAnch_Z;
-//    dAnch_X = dAnch_Y = dAnch_Z = nullptr;
     while (nTagNum < 1 || nTagNum > 8)
     {
         cout << endl;
@@ -89,17 +88,20 @@ int main(int argc, char *argv[])
     QThread *spIOThread = new QThread;
     cTCPCom *tcpServer = new cTCPCom;
     QThread *tcpIOThread = new QThread;
-    cProcRawData *procData = new cProcRawData;
-    QThread *procDataThread = new QThread;
+    cProcRawData *procRawData = new cProcRawData;
+    QThread *procRawDataThread = new QThread;
+    cProcCookedData *procCookedData = new cProcCookedData;
+    QThread *procCookedDataThread = new QThread;
 
     /// Step1. Serial Port Thread
-    spDevice->setHandleDataFun(procData->addRawData, procData);
+    spDevice->setHandleDataFun(procRawData->addRawData, procRawData);
     spDevice->moveToThread(spIOThread);
     spIOThread->start();
     ERROR_CODE err_code = spDevice->initialize();
     cout << "Serial port IO thread starts!" << endl;
 
     /// Step2. TCP/IP Thread
+    tcpServer->setHandleDataFun(procCookedData->procCookedData, procCookedData);
     tcpServer->moveToThread(tcpIOThread);
     tcpIOThread->start();
     string ipAddr;
@@ -115,18 +117,22 @@ int main(int argc, char *argv[])
     else
         cout << "Server connection failed!" << endl;
 
-    /// Step 3. Process data, localize tags and Kalman Filter tracks
-    procData->setHandleDataFun(tcpServer->setDataToSend,tcpServer);
-    procData->moveToThread(procDataThread);
-    procDataThread->start();
-    err_code = procData->initialize(nTagNum,nAnchNum,anchXYZ);
+    /// Step 3. Process raw data, localize tags and Kalman Filter tracks
+    procRawData->setHandleDataFun(tcpServer->setDataToSend,tcpServer);
+    procRawData->moveToThread(procRawDataThread);
+    procRawDataThread->start();
+    err_code = procRawData->initialize(nTagNum,nAnchNum,anchXYZ);
     if (err_code == _ERROR_CODE_SUCC)
         cout << "TCP/IP IO thread starts!" << endl;
     else
         cout << "Server connection failed!" << endl;
 
+    /// Step 4. Process cooked data which is received from server
+    procCookedData->moveToThread(procCookedDataThread);
+    procCookedDataThread->start();
 
-    /// Step 4 Wait and Respond Next Command
+
+    /// Step 5 Wait and Respond Next Command
     bool isQuit = false;
     do{
         cout << "Please input the command(s=switch print; p=pause; c=continue; q=quit): " << endl;
@@ -136,21 +142,19 @@ int main(int argc, char *argv[])
         cmd.append(tmpCmd);
         if (cmd == "s")
         {
-            spDevice->switchPrintOnOff();
-            tcpServer->switchPrintOnOff();
-            procData->switchPrintOnOff();
+            switchPrintOnOff();
         }
         else if (cmd == "p")
         {
             spDevice->pauseSerialPort();
             tcpServer->pauseConnection();
-            procData->pauseThread();
+            procRawData->pauseThread();
         }
         else if (cmd == "c")
         {
             spDevice->continueSerialPort();
             tcpServer->continueConnection();
-            procData->continueThread();
+            procRawData->continueThread();
         }
         else if (cmd == "q")
             isQuit = true;
@@ -162,10 +166,10 @@ int main(int argc, char *argv[])
     /// Step 5: delete all news and quit
     spIOThread->quit();     spIOThread->wait();
     tcpIOThread->quit();    tcpIOThread->wait();
-    procDataThread->quit(); procDataThread->wait();
+    procRawDataThread->quit(); procRawDataThread->wait();
     delete spDevice;     delete spIOThread;
     delete tcpServer;     delete tcpIOThread;
-    delete procData;   delete procDataThread;
+    delete procRawData;   delete procRawDataThread;
     delete[] anchXYZ;
 
     cout << "=====Game Over=====" << endl;
